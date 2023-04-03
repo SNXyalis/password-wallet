@@ -32,16 +32,37 @@ class Db:
             return False
         return True
 
-    #TODO
-    def add_credential(self):
-        None
+    def add_credential(self, app_name, user_id, account_id, pwd, username):
+        cur = self.con.cursor()
+        cur.execute("INSERT INTO Credentials VALUES(?, ?, ?, ?, ?)", (app_name, user_id, account_id, pwd, username))
+        self.con.commit()
     
-    #TODO
-    def get_credentials(self):
-        None
+    def get_credentials(self, user):
+        cur = self.con.cursor()
+        res = cur.execute("SELECT App_name, account_id, pwd FROM Credentials Where FK_username=(?)", (user.username))  
+        ar = []      
+        for elem in res.fetchall():
+            ar.append([elem[0], elem[1], elem [2]])
+        return ar
     
     #TODO
     def get_credential(self):
+        None
+
+    #TODO
+    def delete_credential(self):
+        None
+    
+    #TODO
+    def delete_credentials(self):
+        None
+    
+    #TODO
+    def update_credential(self):
+        None
+    
+    #TODO
+    def backup_db(self):
         None
     
     def init(self, db_name="create.sql"):
@@ -57,7 +78,6 @@ class Db:
             cur = self.con.cursor()
             cur.executescript(sql_script)
             self.con.commit()
-
 
 class Credentials:
     def __init__(self, app_name, uid, account_id, pwd, owner_username):
