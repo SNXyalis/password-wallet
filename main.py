@@ -16,14 +16,21 @@ class Db:
         res = cur.execute("SELECT Username FROM Users;")  
         ar = []      
         for elem in res.fetchall():
-            username, email, pwd = elem
-            ar.append(User(username, email, pwd))
+            username = elem[0]
+            ar.append(username)
         return ar
     
     def add_user(self, username, email, pwd):
         cur = self.con.cursor()
         cur.execute("INSERT INTO Users VALUES(?, ?, ?)", (username, email, pwd))
-        self.con.commit()   
+        self.con.commit() 
+
+    def is_user(self, username, pwd):
+        cur = self.con.cursor()
+        res = cur.execute("SELECT Username, Pwd from Users WHERE Username=(?) AND Pwd=(?)", (username, pwd)) 
+        if res.fetchone() is None:
+            return False
+        return True
 
     #TODO
     def add_credential(self):
@@ -104,17 +111,14 @@ class Session:
         except Exception as e:
             print(e)
 
-    def login(self, username, password):
+    def login(self, username, password, db):
         username = username 
         password = password 
 
-        db = get_users()
-        for elem in db:
-            if username==elem.username:
-                if password==elem.password:
-                    self.session_flag=True
-                    self.session_user=User(elem.username, elem.email, elem.password)
-                return True
+        if (db.is_user(username, password)):
+            self.session_flag=True
+            self.session_user=User(username, "none", password)
+            return True
         return False
 
     def logout(self):
@@ -126,12 +130,8 @@ class Session:
     def is_session_active(self):
         return self.session_flag
 
-    def signin(self, username, email, password):
-        username = username 
-        email = email 
-        password = password 
-        db = get_users()
-        db.append(User(username, email, password))
+    def signin(self, username, email, password, db):
+        db.add_user(username, email, password)
         self.session_flag=True
         self.session_user=User(username, email, password)
         return self.session_flag
@@ -158,6 +158,7 @@ def search_creds(uid):
 def main():
     app_status = True
     session = Session()
+    db = Db()
     try:
         session.read_cookie()
     except Exception as e:
@@ -170,7 +171,7 @@ def main():
             if session.is_session_active():
                 print("You are already logged in")
             else:
-                if session.login(input("Enter username: "), input("Password: ")):
+                if session.login(input("Enter username: "), input("Password: "), db):
                     print("Logged in successfully")
         #log out
         if choice == 2:
@@ -185,7 +186,7 @@ def main():
             if session.is_session_active():
                 print("You need to log out firstt")
             else:
-                if session.signin( input("Enter username: "), input("Email: "), input("Password: ")):
+                if session.signin( input("Enter username: "), input("Email: "), input("Password: "), db):
                     print("User created succesfully")
                 else:
                     print("Error during sign in")
@@ -214,11 +215,20 @@ def main():
             for i in range(len(creds)):
                 if creds[i].uid == uid:
                     creds.pop(i)
+
+        if choice == 7:
+            db.init()
+        if choice == 8:
+            db.drop()
+        if choice == 88:
+            print(db.get_users())
         #Exit
         if choice == -1:
-            session.save_cookie()
+            if session.session_flag:
+                session.save_cookie()
             #global app_status
             app_status=False
+    db.close()
 
 if __name__ == "__main__":
     main()

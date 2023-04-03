@@ -9,5 +9,6 @@ CREATE TABLE Credentials (
     User_id int NOT NULL, 
     Account_id varchar(256) NOT NULL, 
     Pwd varchar(256) NOT NULL, 
-    FK_username varchar(256) NOT NULL FOREIGN KEY REFERENCES Users(Username)
+    FK_username varchar(256) NOT NULL,
+    FOREIGN KEY (FK_username) REFERENCES Users(Username)
 );
