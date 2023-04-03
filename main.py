@@ -136,12 +136,7 @@ class Session:
         self.session_user=User(username, email, password)
         return self.session_flag
 
-db = [User("antonis", "example@dot.com", "12345")] #SQLite for this
 creds = [] #SQLite for this
-
-def get_users():
-    global db
-    return db
 
 def get_creds():
     global creds
