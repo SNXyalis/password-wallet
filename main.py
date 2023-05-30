@@ -167,20 +167,6 @@ class Session:
         self.session_user=User(username, email, password)
         return self.session_flag
 
-creds = [] #SQLite for this
-
-def get_creds():
-    global creds
-    return creds
-
-def search_creds(uid):
-    creds = get_creds()
-    print(creds)
-    for i in creds:
-        if i.uid == uid:
-            return uid
-    return None
-
 def main():
     app_status = True
     session = Session()
