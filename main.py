@@ -32,34 +32,41 @@ class Db:
             return False
         return True
 
-    def add_credential(self, app_name, user_id, account_id, pwd, username):
+    def add_credential(self, cred):
         cur = self.con.cursor()
-        cur.execute("INSERT INTO Credentials VALUES(?, ?, ?, ?, ?)", (app_name, user_id, account_id, pwd, username))
+        cur.execute("INSERT INTO Credentials VALUES(?, ?, ?, ?, ?)", (cred.app_name, cred.uid, cred.account_id, cred.pwd, cred.owner))
         self.con.commit()
     
     def get_credentials(self, user):
         cur = self.con.cursor()
-        res = cur.execute("SELECT App_name, account_id, pwd FROM Credentials Where FK_username=(?)", (user.username))  
+        res = cur.execute("SELECT App_name, account_id, pwd FROM Credentials WHERE FK_username=(?)", (user.username,))  
         ar = []      
         for elem in res.fetchall():
             ar.append([elem[0], elem[1], elem [2]])
         return ar
     
-    #TODO
-    def get_credential(self):
-        None
+    def get_credential(self, user, uid):
+        cur = self.con.cursor()
+        res = cur.execute("SELECT App_name, account_id, pwd FROM Credentials WHERE FK_username=(?) AND User_id=(?)", (user.username, uid))  
+        ar = []      
+        for elem in res.fetchall():
+            ar.append([elem[0], elem[1], elem [2]])
+        return ar
 
-    #TODO
-    def delete_credential(self):
-        None
+    def delete_credential(self, user, uid):
+        cur = self.con.cursor()
+        cur.execute("DELETE FROM Credentials WHERE FK_username=(?) AND User_id=(?)", (user.username, uid))  
+        self.con.commit()
     
-    #TODO
-    def delete_credentials(self):
-        None
+    def delete_credentials(self, user):
+        cur = self.con.cursor()
+        cur.execute("DELETE FROM Credentials WHERE FK_username=(?)", (user.username,))  
+        self.con.commit()
     
-    #TODO
-    def update_credential(self):
-        None
+    def update_credential(self, user, uid, cred):
+        cur = self.con.cursor()
+        cur.execute("UPDATE Credentials SET  App_name=(?), User_id=(?), Account_id=(?), Pwd=(?), FK_username=(?) WHERE FK_username=(?) AND User_id=(?)", (cred.app_name, cred.uid, cred.account_id, cred.pwd, cred.owner, user.username, uid))  
+        self.con.commit()
     
     #TODO
     def backup_db(self):
@@ -86,6 +93,10 @@ class Credentials:
         self.account_id=account_id
         self.pwd=pwd
         self.owner=owner_username
+
+    def assert_credentials(self):
+        #TODO check if data is valid
+        pass
 
 class User:
     def __init__(self, username, email, password):
@@ -209,27 +220,55 @@ def main():
         #Add creds
         if choice == 4:
             if session.is_session_active():
-                cred = Credentials(input("appname"),input("uid"),input("accountid"), input("pwd"), input("owner"))
-                get_creds().append(cred)
+                cred = Credentials(input("appname"),input("uid"),input("accountid"), input("pwd"), session.session_user.username)
+                #assert_credentials()
+                db.add_credential(cred)
+                #get_creds().append(cred)
             else:
                 print("Please login")
         
         #Search creds
         if choice == 5: 
             if session.is_session_active:
+                ar = db.get_credentials(session.session_user)
+                print(ar)
+            else:
+                print("Please login")
+
+        #Search creds
+        if choice == 10: 
+            if session.is_session_active:
                 searchuid = input("searchuid")
-                cred = search_creds(searchuid)
-                print(cred)
+                ar = db.get_credential(session.session_user, searchuid)
+                print(ar)
             else:
                 print("Please login")
         
-        #Delete creds
+        #Delete cred
         if choice == 6:
-            uid = input("uid")
-            creds = get_creds()
-            for i in range(len(creds)):
-                if creds[i].uid == uid:
-                    creds.pop(i)
+            if session.is_session_active():
+                searchuid = input("searchuid")
+                db.delete_credential(session.session_user, searchuid)
+            else:
+                print("Please login")
+        
+        #Delete all creds
+        if choice == 9:
+            if session.is_session_active():
+                db.delete_credentials(session.session_user)
+            else:
+                print("Please login")
+        
+        #Update cred
+        if choice == 11:
+            if session.is_session_active():
+                searchuid = input("searchuid")
+                cred = Credentials(input("appname"),input("uid"),input("accountid"), input("pwd"), session.session_user.username)
+                #assert_credentials()
+                db.update_credential(session.session_user, searchuid, cred)
+                #get_creds().append(cred)
+            else:
+                print("Please login")
 
         if choice == 7:
             db.init()
