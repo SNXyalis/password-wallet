@@ -15,7 +15,11 @@
       <header>
         <div>
           <h1>{{ password['Title'] }}</h1>
+          <div class="about">by {{ password['Username'] }} on {{ password['UpdatedAt'] }}</div>
         </div>
+        {% if g.user['UserID'] == password['FK_UserID'] %}
+        <a class="action" href="{{ url_for('password.update', PasswordID=password['PasswordID']) }}">Edit</a>
+        {% endif %}
       </header>
       <p class="FK_UserID">{{ password['FK_UserID'] }}</p>
     </article>
@@ -24,3 +28,4 @@
     {% endif %}
   {% endfor %}
 {% endblock %}
+
