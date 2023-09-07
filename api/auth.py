@@ -1,5 +1,5 @@
 from flask import Blueprint, request, make_response, jsonify, session, g, redirect, url_for
-from flaskr.database.db import db, IntegrityError, AttributeError
+from flaskr.database.db import db, IntegrityError
 from flaskr.models.User import User
 from werkzeug.security import check_password_hash, generate_password_hash
 import functools
