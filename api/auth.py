@@ -1,5 +1,5 @@
 from flask import Blueprint, request, make_response, jsonify, session, g, redirect, url_for
-from flaskr.database.db import db
+from flaskr.database.db import db, IntegrityError, AttributeError
 from flaskr.models.User import User
 from werkzeug.security import check_password_hash, generate_password_hash
 import functools
@@ -41,8 +41,12 @@ def register():
                 )
                 db.session.add(user)
                 db.session.commit()
-            except db.IntegrityError:
+            except IntegrityError:
+                db.session.rollback()
                 error = f"User {username} is already registered."
+            except AttributeError:
+                db.session.rollback()
+                error = f"Column Constraint violated"
             else:
                 response = make_response(jsonify({ "message" : "User registered successfully" }), 201)
                 return response 
