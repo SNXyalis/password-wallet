@@ -1,14 +1,14 @@
 from flaskr.database.db import db
 from datetime import datetime
 class User(db.Model):
-    UserID = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Username = db.Column(db.String(256), unique=True)
-    Email = db.Column(db.String(256), unique=True, index=True)
-    Password = db.Column(db.String(256))
-    roles = db.Column(db.String(256), default="User")
-    is_active = db.Column(db.Boolean, default=True, server_default="true")
-    CreatedAt = db.Column(db.DateTime(), default=datetime.now)
-    UpdatedAt = db.Column(db.DateTime(), default=datetime.now, onupdate=datetime.now)
+    UserID = db.Column(db.Integer, primary_key=True, autoincrement=True, nullable=False)
+    Username = db.Column(db.String(256), unique=True, nullable=False)
+    Email = db.Column(db.String(256), unique=True, index=True, nullable=False)
+    Password = db.Column(db.String(256), nullable=False)
+    roles = db.Column(db.String(256), default="User", nullable=False)
+    is_active = db.Column(db.Boolean, default=True, server_default="true", nullable=False)
+    CreatedAt = db.Column(db.DateTime(), default=datetime.now, nullable=False)
+    UpdatedAt = db.Column(db.DateTime(), default=datetime.now, onupdate=datetime.now, nullable=False)
 
     @property
     def identity(self):
