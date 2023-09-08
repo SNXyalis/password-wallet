@@ -6,11 +6,13 @@ from werkzeug.exceptions import abort
 from flaskr.api.auth import login_required
 from flaskr.database.db import db, IntegrityError
 from flaskr.models.Password import Password
+from flaskr.utils.auth import flask_praetorian
 
 bp = Blueprint('password', __name__, url_prefix="/password")
 
 @bp.get('/all')
-@login_required
+#@login_required
+@flask_praetorian.auth_required
 def index():
     passwords = Password.query.all()
     l = []
@@ -20,7 +22,8 @@ def index():
     return jsonify({"passwords": l}), 200
 
 @bp.post('/')
-@login_required
+#@login_required
+@flask_praetorian.auth_required
 def create():
 
     if not request.is_json:
@@ -76,7 +79,8 @@ def get_password(PasswordID, check_author=True):
     return password
 
 @bp.put('/<int:PasswordID>')
-@login_required
+#@login_required
+@flask_praetorian.auth_required
 def update(PasswordID):
 
     if not request.is_json:
@@ -116,7 +120,8 @@ def update(PasswordID):
     return jsonify({"message": "Bad request"}), 400
 
 @bp.delete('/<int:PasswordID>')
-@login_required
+#@login_required
+@flask_praetorian.auth_required
 def delete(PasswordID):
     p = get_password(PasswordID)
     db.session.delete(p)

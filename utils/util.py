@@ -1,3 +1,5 @@
+import flask_mail
+
 class Blacklist(set):
 
     def is_blacklisted(self,jti):
@@ -7,3 +9,4 @@ class Blacklist(set):
         self.add(jti)
 
 blacklist = Blacklist()
+mail = flask_mail.Mail()
