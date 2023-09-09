@@ -3,7 +3,7 @@ from flask import (
 )
 from werkzeug.exceptions import abort
 
-from flaskr.api.auth import login_required
+#from flaskr.api.auth import login_required
 from flaskr.database.db import db, IntegrityError
 from flaskr.models.Password import Password
 from flaskr.utils.auth import flask_praetorian

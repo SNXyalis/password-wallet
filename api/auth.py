@@ -64,7 +64,7 @@ def finalize():
     try: 
         registration_token = guard.read_token_from_header()
     except Exception as err:
-        return jsonify(error="Couldnt extract cookie")
+        return jsonify(error=err)
         raise
     user = guard.get_user_from_registration_token(registration_token)
     usr = db.first_or_404(db.select(User).filter_by(Username = user.Username))
@@ -155,7 +155,7 @@ def blacklist_token():
         return jsonify(message="Token blacklisted: "+ token)
 
 
-@bp.before_app_request
+'''@bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('UserID')
 
@@ -179,4 +179,4 @@ def login_required(f):
         if 'UserID' not in session:
             return jsonify({"message": "Unauthorized"}), 401
         return f(*args, **kwargs)
-    return is_user_auth
+    return is_user_auth'''
