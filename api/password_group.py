@@ -131,3 +131,4 @@ def delete(password_group_id):
     return jsonify(
         message="Group deleted successfully"
     ), 200
+
