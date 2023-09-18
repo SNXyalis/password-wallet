@@ -14,7 +14,7 @@ bp = Blueprint('password', __name__, url_prefix="/password")
 #@login_required
 @flask_praetorian.auth_required
 def index():
-    passwords = Password.query.all()
+    passwords = Password.query.filter(Password.FK_UserID == g.user.UserID)
     l = []
     for e in passwords:
         l.append({ "title": e.Title, "id": e.PasswordID})

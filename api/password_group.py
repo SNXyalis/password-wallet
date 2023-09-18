@@ -12,7 +12,7 @@ bp = Blueprint('password_group', __name__, url_prefix="/password-group")
 
 @bp.get('/all')
 def index():
-    password_groups = PasswordGroup.query.all()
+    password_groups = PasswordGroup.query.filter(PasswordGroup.FK_UserID == g.user.UserID)
     l = []
     for i in password_groups:
         l.append({"id" : i.password_group_id, "title" : i.title})

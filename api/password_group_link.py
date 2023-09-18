@@ -5,12 +5,26 @@ from flaskr.database.db import db, IntegrityError
 from flaskr.models.Password import Password
 from flaskr.models.PasswordGroup import PasswordGroup
 from flaskr.models.PasswordGroupLink import PasswordGroupLink
+from flaskr.utils.auth import flask_praetorian
+from werkzeug.exceptions import abort
 
 bp = Blueprint('password_group_link', __name__, url_prefix='/password-group-link')
+
+@bp.get('/')
+@flask_praetorian.auth_required
+def index():
+    links = PasswordGroupLink.query.filter(PasswordGroupLink.FK_UserID == g.user.UserID)
+    l=[]
+    for i in links:
+        l.append({"group" : i.password_group_id, "password" : i.PasswordID})
+    return jsonify(
+        links = l
+    ), 200
 
 #Adds passwords in a group
 #params: single group id, array of password ids
 @bp.post('/')
+@flask_praetorian.auth_required
 def add_link():
 
     error = None
@@ -34,7 +48,8 @@ def add_link():
                 group_link.append(
                     PasswordGroupLink(
                         PasswordID = e,
-                        password_group_id = group_id
+                        password_group_id = group_id,
+                        FK_UserID = g.user.UserID
                     )
                 )
             
@@ -59,7 +74,42 @@ def add_link():
          message= error
     ),400
         
+def get_link(PasswordID, password_group_id, check_author=True):
+    link = db.first_or_404(db.select(PasswordGroupLink).filter_by(password_group_id=password_group_id, PasswordID=PasswordID))
 
-#TODO
+    if link is None:
+        abort(404, f"Group id {password_group_id} doesn't exist.")
 
-#REMOVE PASSWORD FROM GROUP
+    if check_author and link.FK_UserID != g.user.UserID:
+        abort(403)
+
+    return link
+
+@bp.delete('/')
+@flask_praetorian.auth_required
+def remove_link(): 
+    error = None
+
+    if not request.is_json:
+        return jsonify(
+            error = "Invalid JSON data"
+        ),400
+    
+    if request.method == 'DELETE':
+        data = request.json
+        password_id = data.get("password_id")
+        group_id = data.get("group_id")
+
+        try:
+            db.session.begin() 
+            for e in password_id:
+                link = get_link(e, group_id)
+                db.session.delete(link)
+        except Exception as err:
+            db.session.rollback()
+            return jsonify(
+                error = err
+            ), 400
+
+         
+     
