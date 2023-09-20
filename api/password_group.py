@@ -6,16 +6,16 @@ from werkzeug.exceptions import abort
 #from flaskr.api.auth import login_required
 from flaskr.database.db import db, IntegrityError
 from flaskr.models.PasswordGroup import PasswordGroup
-from flaskr.utils.auth import flask_praetorian
+from flaskr.utils.auth import flask_praetorian, guard
 
 bp = Blueprint('password_group', __name__, url_prefix="/password-group")
 
 @bp.get('/all')
 def index():
-    password_groups = PasswordGroup.query.filter(PasswordGroup.FK_UserID == g.user.UserID)
+    password_groups = PasswordGroup.query.filter(PasswordGroup.FK_UserID == guard.extract_jwt_token(guard.read_token_from_header())["UserID"])
     l = []
     for i in password_groups:
-        l.append({"id" : i.password_group_id, "title" : i.title})
+        l.append({"id" : i.password_group_id, "title" : i.title, "description": i.description, "group_img": i.group_img, "creator": i.creator, "modified_by": i.modified_by})
     return jsonify(
         passwords = l
     ), 200
@@ -34,6 +34,7 @@ def create():
         title = data.get('title')
         description = None
         group_img = None
+        error = None
         if data.get('description'):
             description = data.get('description')
         if data.get('group_img'):
@@ -52,10 +53,12 @@ def create():
                     title = title,
                     description = description,
                     group_img = group_img,
-                    FK_UserID = g.user.UserID,
-                    creator = g.user.Username,
-                    modified_by = g.user.Username,
+                    FK_UserID = guard.extract_jwt_token(guard.read_token_from_header())["UserID"],
+                    creator = guard.extract_jwt_token(guard.read_token_from_header())["Username"],
+                    modified_by = guard.extract_jwt_token(guard.read_token_from_header())["Username"],
                 )
+                db.session.add(password_group)
+                db.session.commit()
             except IntegrityError:
                 db.session.rollback()
                 error = f"Group with Title {title} on user {g.user.Username} is already registered."
@@ -73,7 +76,7 @@ def get_password_group(password_group_id, check_author=True):
     if group is None:
         abort(404, f"Group id {password_group_id} doesn't exist.")
 
-    if check_author and group.FK_UserID != g.user.UserID:
+    if check_author and group.FK_UserID != guard.extract_jwt_token(guard.read_token_from_header())["UserID"]:
         abort(403)
 
     return group
@@ -81,6 +84,7 @@ def get_password_group(password_group_id, check_author=True):
 @bp.put('/<int:password_group_id>')
 @flask_praetorian.auth_required
 def update(password_group_id):
+    error = None
     if not request.is_json:
         return jsonify(
             error="Invalid JSON data"
@@ -109,7 +113,7 @@ def update(password_group_id):
                 group.title = title
                 group.description = description
                 group.group_img = group_img
-                group.modified_by = g.user.Username
+                group.modified_by = guard.extract_jwt_token(guard.read_token_from_header())["Username"]
                 db.session.commit()
             except IntegrityError:
                 db.session.rollback()

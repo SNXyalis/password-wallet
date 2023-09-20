@@ -6,7 +6,8 @@ from werkzeug.exceptions import abort
 #from flaskr.api.auth import login_required
 from flaskr.database.db import db, IntegrityError
 from flaskr.models.Password import Password
-from flaskr.utils.auth import flask_praetorian
+from flaskr.utils.auth import flask_praetorian, guard
+from flaskr.utils.encryption import generate_nonce, enc_cipher, custom_encrypt, read_key, dec_cipher, custom_decrypt
 
 bp = Blueprint('password', __name__, url_prefix="/password")
 
@@ -14,10 +15,24 @@ bp = Blueprint('password', __name__, url_prefix="/password")
 #@login_required
 @flask_praetorian.auth_required
 def index():
-    passwords = Password.query.filter(Password.FK_UserID == g.user.UserID)
+
+    user_id = guard.extract_jwt_token(guard.read_token_from_header())["UserID"]
+
+    passwords = Password.query.filter(Password.FK_UserID == user_id)
     l = []
+
+    key = None
+    try:
+        key = read_key()
+    except Exception as err:
+        print(err)
+
     for e in passwords:
-        l.append({ "title": e.Title, "id": e.PasswordID})
+        ct = e.EncryptedPassword[8:]
+        n = e.EncryptedPassword[:8]
+        dc = dec_cipher(key,n)
+        EncryptedPassword = custom_decrypt(dc, ct)
+        l.append({ "title": e.Title, "id": e.PasswordID, "username" : e.Username, "encrypted_password": EncryptedPassword, "user_id": e.FK_UserID})
 
     return jsonify({"passwords": l}), 200
 
@@ -36,6 +51,19 @@ def create():
         EncryptedPassword = data.get('EncryptedPassword')
         error = None
 
+        n = generate_nonce()
+        key = None
+        try:
+            key = read_key()
+        except Exception as err:
+            error = err
+        
+        cipher = enc_cipher(key, n)
+        ct = custom_encrypt(cipher, EncryptedPassword)
+        message = n + ct
+        EncryptedPassword = message
+        n, key = None, None
+
         if not Title:
             error = 'Title is required.'
         elif not Username:
@@ -52,7 +80,7 @@ def create():
                     Title = Title,
                     Username = Username,
                     EncryptedPassword = EncryptedPassword,
-                    FK_UserID = g.user.UserID
+                    FK_UserID = guard.extract_jwt_token(guard.read_token_from_header())["UserID"]
                 )
                 db.session.add(password)
                 db.session.commit()
@@ -73,7 +101,7 @@ def get_password(PasswordID, check_author=True):
     if password is None:
         abort(404, f"Password id {PasswordID} doesn't exist.")
 
-    if check_author and password.FK_UserID != g.user.UserID:
+    if check_author and password.FK_UserID != guard.extract_jwt_token(guard.read_token_from_header())["UserID"]:
         abort(403)
 
     return password
@@ -91,6 +119,26 @@ def update(PasswordID):
         Username = data.get('Username')
         EncryptedPassword = data.get('EncryptedPassword')
         error = None
+
+        n = generate_nonce()
+        key = None
+        try:
+            key = read_key()
+        except Exception as err:
+            error = err
+        
+        cipher = enc_cipher(key, n)
+        ct = custom_encrypt(cipher, EncryptedPassword)
+        message = n + ct
+        EncryptedPassword = message
+        n, key = None, None
+
+        if not Title:
+            error = 'Title is required.'
+        elif not Username:
+            error = 'Username is required.'
+        elif not EncryptedPassword:
+            error = 'Password is required.'
 
         if not Title:
             error = 'Title is required.'

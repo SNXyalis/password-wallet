@@ -4,6 +4,8 @@ from flask import Flask
 #from . import db
 from flaskr.database.db import db
 from flaskr.models import Password
+from flaskr.models.PasswordGroup import PasswordGroup
+from flaskr.models.PasswordGroupLink import PasswordGroupLink
 from flaskr.models.User import User
 from flaskr.utils.auth import guard, cors
 from flaskr.utils.util import blacklist, mail
@@ -63,7 +65,10 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     from flaskr.api import password
     app.register_blueprint(password.bp)
-
+    from flaskr.api import password_group
+    app.register_blueprint(password_group.bp)
+    from flaskr.api import password_group_link
+    app.register_blueprint(password_group_link.bp)
     #from . import password
     #app.register_blueprint(password.bp)
     #app.add_url_rule('/', endpoint='index')

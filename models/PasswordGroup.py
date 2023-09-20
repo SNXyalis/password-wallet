@@ -9,5 +9,5 @@ class PasswordGroup(db.Model):
     FK_UserID = db.Column(db.Integer, db.ForeignKey('user.UserID'), nullable=False)
     creator = db.Column(db.String(256))
     modified_by = db.Column(db.String(256))
-    CreatedAt = db.Column(db.Datetime(), default=datetime.now, nullable=False)
-    UpdatedAt = db.Column(db.Datetime(), default=datetime.now, onupdate=datetime.now, nullable=False)
+    CreatedAt = db.Column(db.DateTime(), default=datetime.now, nullable=False)
+    UpdatedAt = db.Column(db.DateTime(), default=datetime.now, onupdate=datetime.now, nullable=False)

@@ -5,7 +5,7 @@ from flaskr.database.db import db, IntegrityError
 from flaskr.models.Password import Password
 from flaskr.models.PasswordGroup import PasswordGroup
 from flaskr.models.PasswordGroupLink import PasswordGroupLink
-from flaskr.utils.auth import flask_praetorian
+from flaskr.utils.auth import flask_praetorian, guard
 from werkzeug.exceptions import abort
 
 bp = Blueprint('password_group_link', __name__, url_prefix='/password-group-link')
@@ -13,7 +13,7 @@ bp = Blueprint('password_group_link', __name__, url_prefix='/password-group-link
 @bp.get('/')
 @flask_praetorian.auth_required
 def index():
-    links = PasswordGroupLink.query.filter(PasswordGroupLink.FK_UserID == g.user.UserID)
+    links = PasswordGroupLink.query.filter(PasswordGroupLink.FK_UserID == guard.extract_jwt_token(guard.read_token_from_header())["UserID"])
     l=[]
     for i in links:
         l.append({"group" : i.password_group_id, "password" : i.PasswordID})
@@ -49,7 +49,7 @@ def add_link():
                     PasswordGroupLink(
                         PasswordID = e,
                         password_group_id = group_id,
-                        FK_UserID = g.user.UserID
+                        FK_UserID = guard.extract_jwt_token(guard.read_token_from_header())["UserID"]
                     )
                 )
             
@@ -80,7 +80,7 @@ def get_link(PasswordID, password_group_id, check_author=True):
     if link is None:
         abort(404, f"Group id {password_group_id} doesn't exist.")
 
-    if check_author and link.FK_UserID != g.user.UserID:
+    if check_author and link.FK_UserID != guard.extract_jwt_token(guard.read_token_from_header())["UserID"]:
         abort(403)
 
     return link
@@ -105,6 +105,10 @@ def remove_link():
             for e in password_id:
                 link = get_link(e, group_id)
                 db.session.delete(link)
+            db.session.commit()
+            return jsonify(
+                message="Link deleted"
+            ), 200
         except Exception as err:
             db.session.rollback()
             return jsonify(
