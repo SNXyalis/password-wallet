@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, flash, g, request,  jsonify
+    Blueprint, flash, g, request,  jsonify, current_app
 )
 from werkzeug.exceptions import abort
 
@@ -42,7 +42,9 @@ def index():
 def create():
 
     if not request.is_json:
-        return jsonify({'error': 'Invalid JSON data'}), 400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
 
     if request.method == 'POST':
         data = request.json
@@ -71,9 +73,11 @@ def create():
         elif not EncryptedPassword:
             error = 'Password is required.'
     
-
         if error is not None:
-            return jsonify({"message": error}), 400
+            current_app.logger.warning("Client error, " +error)
+            return jsonify(
+                message = error
+            ), 400
         else:
             try:
                 password = Password(
@@ -93,7 +97,8 @@ def create():
             else:
                 return jsonify({"message": "Password added succesfully"}), 201
 
-    return jsonify({"message": "Failed to add password"}), 400
+    current_app.logger.warning("Client error, " +error)
+    return jsonify({"message": error}), 400
 
 def get_password(PasswordID, check_author=True):
     password = db.first_or_404(db.select(Password).filter_by(PasswordID=PasswordID))
@@ -112,7 +117,10 @@ def get_password(PasswordID, check_author=True):
 def update(PasswordID):
 
     if not request.is_json:
-        return jsonify({'error': 'Invalid JSON data'}), 400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
+    
     if request.method == 'PUT':
         data = request.json
         Title = data.get('Title')
@@ -140,15 +148,11 @@ def update(PasswordID):
         elif not EncryptedPassword:
             error = 'Password is required.'
 
-        if not Title:
-            error = 'Title is required.'
-        elif not Username:
-            error = 'Username is required.'
-        elif not EncryptedPassword:
-            error = 'Password is required.'
-
         if error is not None:
-            return jsonify({"message": error}), 400
+            current_app.logger.warning("Client error, " +error)
+            return jsonify(
+                message = error
+            ), 400
         else:
             try:
                 p = get_password(PasswordID)
@@ -165,7 +169,8 @@ def update(PasswordID):
             else:
                 return jsonify({"message": "Password updated"}), 200
 
-    return jsonify({"message": "Bad request"}), 400
+    current_app.logger.warning("Client error, " +error)
+    return jsonify({"message": error}), 400
 
 @bp.delete('/<int:PasswordID>')
 #@login_required

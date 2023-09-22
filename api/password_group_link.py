@@ -1,9 +1,7 @@
 from flask import (
-    Blueprint, request, g, jsonify
+    Blueprint, request, g, jsonify, current_app
 )
 from flaskr.database.db import db, IntegrityError
-from flaskr.models.Password import Password
-from flaskr.models.PasswordGroup import PasswordGroup
 from flaskr.models.PasswordGroupLink import PasswordGroupLink
 from flaskr.utils.auth import flask_praetorian, guard
 from werkzeug.exceptions import abort
@@ -30,14 +28,26 @@ def add_link():
     error = None
 
     if not request.is_json:
-        return jsonify(
-            error = "Invalid JSON data"
-        ),400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
     
     if request.method == 'POST':
         data = request.json
         password_id = data.get("password_id")
         group_id = data.get("group_id")
+
+        if password_id is None:
+            error = "No passwords provided"
+
+        if group_id is None:
+            error = "No group provided"
+
+        if error is not None:
+            current_app.logger.warning("Client error, " +error)
+            return jsonify(
+                message = error
+            ), 400
 
         group_link = []
 
@@ -91,14 +101,26 @@ def remove_link():
     error = None
 
     if not request.is_json:
-        return jsonify(
-            error = "Invalid JSON data"
-        ),400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
     
     if request.method == 'DELETE':
         data = request.json
         password_id = data.get("password_id")
         group_id = data.get("group_id")
+
+        if password_id is None:
+            error = "No passwords provided"
+
+        if group_id is None:
+            error = "No group provided"
+
+        if error is not None:
+            current_app.logger.warning("Client error, " +error)
+            return jsonify(
+                message = error
+            ), 400
 
         try:
             db.session.begin() 

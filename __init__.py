@@ -1,4 +1,5 @@
 import os
+import logging
 
 from flask import Flask
 #from . import db
@@ -11,8 +12,18 @@ from flaskr.utils.auth import guard, cors
 from flaskr.utils.util import blacklist, mail
 
 def create_app(test_config=None):
+
+    f = "debug.log"
+    logging_file_handler = logging.FileHandler(filename=f) 
+    logging_file_handler.setLevel(logging.DEBUG)
+
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+
+    #LOGGING
+    app.logger.addHandler(logging_file_handler)
+    app.logger.info(f"Logging to {f}")
+
 
     #CONFIG
     app.config.from_mapping(
@@ -69,14 +80,5 @@ def create_app(test_config=None):
     app.register_blueprint(password_group.bp)
     from flaskr.api import password_group_link
     app.register_blueprint(password_group_link.bp)
-    #from . import password
-    #app.register_blueprint(password.bp)
-    #app.add_url_rule('/', endpoint='index')
-
-
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
 
     return app

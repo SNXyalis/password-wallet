@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, flash, g, request,  jsonify
+    Blueprint, flash, g, request,  jsonify, current_app
 )
 from werkzeug.exceptions import abort
 
@@ -25,9 +25,9 @@ def index():
 def create():
 
     if not request.is_json:
-        return jsonify(
-            error = "Invalid JSON data"
-        ), 400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
     
     if request.method == 'POST':
         data = request.json
@@ -44,6 +44,7 @@ def create():
             error = 'Title is required.'
 
         if error is not None:
+            current_app.logger.warning("Client error, " +error)
             return jsonify(
                 message = error
             ), 400
@@ -68,7 +69,8 @@ def create():
             else:
                 return jsonify({"message": "Group added succesfully"}), 201
 
-    return jsonify({"message": "Failed to create Group"}), 400
+    current_app.logger.warning("Client error, " +error)
+    return jsonify({"message": error}), 400
 
 def get_password_group(password_group_id, check_author=True):
     group = db.first_or_404(db.select(PasswordGroup).filter_by(password_group_id=password_group_id))
@@ -86,9 +88,9 @@ def get_password_group(password_group_id, check_author=True):
 def update(password_group_id):
     error = None
     if not request.is_json:
-        return jsonify(
-            error="Invalid JSON data"
-        ), 400
+        err = 'Invalid request data format'
+        current_app.logger.warning("Client error, " +err)
+        return jsonify(error= err), 400
     
     if request.method == "PUT":
         data = request.json
@@ -104,6 +106,7 @@ def update(password_group_id):
             error = 'Title is required.'
 
         if error is not None:
+            current_app.logger.warning("Client error, " +error)
             return jsonify(
                 message = error
             ), 400
@@ -124,7 +127,8 @@ def update(password_group_id):
             else:
                 return jsonify({"message": "Group updated"}), 200
 
-    return jsonify({"message": "Bad request"}), 400
+    current_app.logger.warning("Client error, " +error)
+    return jsonify({"message": error}), 400
 
 @bp.delete('<int:password_group_id>')
 @flask_praetorian.auth_required
